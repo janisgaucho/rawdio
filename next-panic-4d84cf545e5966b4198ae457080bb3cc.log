@@ -1,0 +1,5 @@
+---------------------------
+failed to create junction point to ../../../../node_modules/@aws-sdk/client-s3
+
+Caused by:
+- Le fichier existe. (os error 80)
