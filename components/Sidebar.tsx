@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Home, UploadCloud, Library, Mic2, Music2, Sliders, Users } from "lucide-react";
+import { Home, Library, Mic2, Music2, Sliders, Users, UploadCloud } from "lucide-react";
 import { useAudio } from "@/components/audio/AudioContext";
 
 export default function Sidebar() {
@@ -51,7 +51,7 @@ export default function Sidebar() {
             </Link>
             <Link href="/upload" className={getLinkClass("/upload")}>
                 <UploadCloud size={20} />
-                <span>Upload</span>
+                <span>Uploader un son</span>
             </Link>
             <Link href="/shared" className={getLinkClass("/shared")}>
                 <Users size={20} />

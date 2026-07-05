@@ -854,7 +854,6 @@ export default function TrackPage() {
                         <h3 className="text-lg font-medium text-white/80 flex items-center gap-2">
                             <History size={20} /> Historique des versions
                         </h3>
-                        
                         <button 
                             onClick={() => !isUploading && fileInputRef.current?.click()}
                             disabled={isUploading}

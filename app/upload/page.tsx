@@ -3,9 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthContext";
-import { Users, MoreVertical, User, CreditCard, LogOut, HardDrive } from "lucide-react";
+import { UploadCloud, MoreVertical, User, CreditCard, LogOut, HardDrive } from "lucide-react";
+import UploadZone from "@/components/library/UploadZone";
+import { useAudio } from "@/components/audio/AudioContext";
 
-export default function SharedPage() {
+export default function UploadPage() {
+  const { uploadTrack } = useAudio();
   const { user, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -15,9 +18,9 @@ export default function SharedPage() {
         <div className="sticky top-0 z-30 bg-black/90 backdrop-blur-xl px-8 py-8 flex items-center justify-between mb-8 border-b border-white/5">
           <div>
             <h1 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-              <Users size={28} /> Partagés avec vous
+              <UploadCloud size={28} /> Uploader un son
             </h1>
-            <p className="text-zinc-500">Retrouvez ici les morceaux que d'autres utilisateurs ont partagés.</p>
+            <p className="text-zinc-500">Ajoutez un nouveau morceau à votre bibliothèque.</p>
           </div>
           {user && (
             <div className="relative flex items-center gap-4">
@@ -44,6 +47,18 @@ export default function SharedPage() {
               )}
             </div>
           )}
+        </div>
+
+        <div className="px-8">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-zinc-400 mb-8 text-center">
+              Les formats MP3, WAV, FLAC et AIFF sont supportés.
+            </p>
+            <UploadZone onFileSelect={uploadTrack} />
+            <p className="text-center text-sm text-zinc-500 mt-4">
+              Après l'upload, vous pourrez éditer les métadonnées comme le titre, l'artiste, le BPM et la clé depuis la page du morceau.
+            </p>
+          </div>
         </div>
       </div>
     </main>

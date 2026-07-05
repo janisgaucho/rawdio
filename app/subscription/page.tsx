@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useAudio } from "@/components/audio/AudioContext";
-import { Library, MoreVertical, User, CreditCard, LogOut, HardDrive, Loader2, Music } from "lucide-react";
+import { CreditCard, MoreVertical, User, LogOut, HardDrive, Check } from "lucide-react";
+import { PLANS, PlanType } from "@/lib/plans";
 
-export default function LibraryPage() {
+export default function SubscriptionPage() {
   const { user, logout } = useAuth();
-  const { playlist, playTrack } = useAudio();
+  const { userPlan } = useAudio();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   return (
@@ -18,9 +18,9 @@ export default function LibraryPage() {
         <div className="sticky top-0 z-30 bg-black/90 backdrop-blur-xl px-8 py-8 flex items-center justify-between mb-8 border-b border-white/5">
           <div>
             <h1 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-              <Library size={28} /> Bibliothèque
+              <CreditCard size={28} /> Abonnement
             </h1>
-            <p className="text-zinc-500">Parcourez tous vos morceaux.</p>
+            <p className="text-zinc-500">Gérez votre abonnement et vos options.</p>
           </div>
           {user && (
             <div className="relative flex items-center gap-4">
@@ -50,43 +50,57 @@ export default function LibraryPage() {
         </div>
 
         <div className="px-8">
-          {playlist.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-              {playlist.map((track) => (
+          <p className="text-center text-zinc-400 mb-12 max-w-2xl mx-auto">
+            Choisissez l'offre qui correspond à vos besoins. Passez à une offre supérieure à tout moment pour plus d'espace de stockage et de fonctionnalités.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {Object.entries(PLANS).map(([planId, planDetails]) => {
+              // Sécurité : on vérifie que le plan de l'utilisateur existe bien dans la config
+              // avant de faire la comparaison. Sinon, on considère le plan "free" comme plan courant.
+              const safeUserPlan = userPlan in PLANS ? userPlan : 'free';
+              const isCurrentPlan = safeUserPlan === planId;
+              return (
                 <div 
-                  key={track.id} 
-                  className="group cursor-pointer"
-                  onClick={() => playTrack(track)}
+                  key={planId}
+                  className={`bg-[#111] border rounded-3xl p-8 flex flex-col transition-all duration-300 ${isCurrentPlan ? 'border-white/30 scale-105 shadow-2xl shadow-white/5' : 'border-white/10 hover:border-white/20'}`}
                 >
-                  <div className="aspect-square w-full bg-[#111] border border-white/10 rounded-2xl overflow-hidden relative transition-all group-hover:border-white/20 group-hover:scale-105">
-                    {track.coverUrl ? (
-                      <Image src={track.coverUrl} alt={track.title} fill className="object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-                        <Music size={48} className="text-zinc-600" />
-                      </div>
-                    )}
+                  <div className="grow">
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-2xl font-bold text-white">{planDetails.name}</h3>
+                      {isCurrentPlan && (
+                        <span className="text-xs font-bold bg-white text-black px-3 py-1 rounded-full">Actuel</span>
+                      )}
+                    </div>
+                    <p className="text-4xl font-black text-white my-6">
+                      {planDetails.price} <span className="text-lg font-medium text-zinc-400">/ mois</span>
+                    </p>
+                    <ul className="space-y-3 text-zinc-300">
+                      {planDetails.features.map((feature: string, index: number) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <Check size={16} className="text-green-400 mt-1 shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className="mt-3">
-                    <h3 className="font-bold text-white truncate">{track.title}</h3>
-                    <p className="text-sm text-zinc-400 truncate">{track.artist}</p>
+                  <div className="mt-10">
+                    <button 
+                      disabled={isCurrentPlan}
+                      className="w-full py-3 px-6 rounded-xl font-bold text-center transition-colors disabled:cursor-not-allowed
+                        bg-white text-black hover:bg-gray-200 disabled:bg-white/10 disabled:text-zinc-500
+                      "
+                    >
+                      {isCurrentPlan ? "Votre offre actuelle" : "Choisir cette offre"}
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20">
-              {user ? (
-                <>
-                  <Loader2 className="mx-auto animate-spin text-zinc-500 mb-4" size={32} />
-                  <p className="text-zinc-500">Chargement de votre bibliothèque...</p>
-                </>
-              ) : (
-                <p className="text-zinc-500">Connectez-vous pour voir votre bibliothèque.</p>
-              )}
-            </div>
-          )}
+              );
+            })}
+          </div>
+
         </div>
+
       </div>
     </main>
   );
