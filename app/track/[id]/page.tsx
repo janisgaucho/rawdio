@@ -8,7 +8,7 @@ import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, limit, g
 import { getAuth, onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { generateCoverArt } from "@/components/audio/generateCover";
-import { uploadFile, deleteFile } from "@/app/actions/storage";
+import { getUploadUrl, deleteFile } from "@/app/actions/storage";
 import { detectBpmFromFile } from "@/lib/audioAnalysis";
 
 const GENRES = ["Hip-Hop", "Trap", "Drill", "R&B", "Pop", "Afro", "Electro", "House", "Techno", "Rock", "Jazz", "Soul", "Reggae", "Dancehall", "Zouk", "Variété", "Alternative", "Autre"];
@@ -136,10 +136,14 @@ export default function TrackPage() {
         const file = e.target.files[0];
         setIsGeneratingCover(true); // On réutilise le même état de chargement
         try {
-            const formData = new FormData();
-            formData.append("file", file);
-            const downloadURL = await uploadFile(formData, "covers");
+            // 1. Obtenir l'URL pré-signée
+            const { signedUrl, publicUrl } = await getUploadUrl(file.name, file.type, "covers");
             
+            // 2. Uploader le fichier directement vers R2
+            await fetch(signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+
+            const downloadURL = publicUrl;
+
             // Suppression de l'ancienne cover si elle existe
             if (track.coverUrl) {
                 await deleteFile(track.coverUrl).catch(error => 
@@ -179,10 +183,13 @@ export default function TrackPage() {
             const blob = await res.blob();
             const file = new File([blob], "cover_ai_generated.png", { type: "image/png" });
             
-            // Upload via Server Action
-            const formData = new FormData();
-            formData.append("file", file);
-            const downloadURL = await uploadFile(formData, "covers");
+            // 1. Obtenir l'URL pré-signée
+            const { signedUrl, publicUrl } = await getUploadUrl(file.name, file.type, "covers");
+
+            // 2. Uploader le fichier directement vers R2
+            await fetch(signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+
+            const downloadURL = publicUrl;
             
             // Suppression de l'ancienne cover si elle existe pour éviter les orphelins
             if (track.coverUrl) {
