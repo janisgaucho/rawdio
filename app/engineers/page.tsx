@@ -68,7 +68,7 @@ export default function EngineersPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {engineers.map((name) => (
                   <div key={name} className="group cursor-pointer bg-[#111] border border-white/10 rounded-xl p-4 flex items-center gap-4 hover:bg-white/5 transition-colors">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
                       <Sliders size={24} />
                     </div>
                     <div>

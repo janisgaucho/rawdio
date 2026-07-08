@@ -9,7 +9,7 @@ import MetadataModal from "./MetadataModal";
 // Import du contexte d'auth
 import { useAuth } from "@/components/auth/AuthContext";
 // Import des Server Actions R2
-import { uploadFile, deleteFile } from "../../app/actions/storage";
+import { getUploadUrl, deleteFile } from "../../app/actions/storage";
 import { analyzeAudioFile, detectBpmFromFile, formatDuration } from "@/lib/audioAnalysis";
 import { getPlanLimit } from "@/lib/plans";
 
@@ -263,20 +263,37 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     setPendingFile(null);
 
     try {
-      // Upload Audio via Server Action
-      const formData = new FormData();
-      formData.append("file", file);
-      const downloadURL = await uploadFile(formData, "uploads");
+      // --- NOUVEAU FLUX D'UPLOAD ---
+      // 1. Obtenir l'URL pré-signée pour l'audio
+      const { signedUrl: audioSignedUrl, publicUrl: audioPublicUrl } = await getUploadUrl(file.name, file.type, "uploads");
 
-      // Upload Cover (si présente)
+      // 2. Uploader le fichier audio directement vers R2
+      await fetch(audioSignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+
+      const downloadURL = audioPublicUrl;
+
+      // 3. Gérer l'upload de la cover (si présente) de la même manière
       let coverUrl = null;
       if (coverFile) {
-        const coverFormData = new FormData();
-        coverFormData.append("file", coverFile);
-        coverUrl = await uploadFile(coverFormData, "covers");
+        try {
+          const { signedUrl: coverSignedUrl, publicUrl: coverPublicUrl } = await getUploadUrl(coverFile.name, coverFile.type, "covers");
+          await fetch(coverSignedUrl, {
+            method: 'PUT',
+            body: coverFile,
+            headers: { 'Content-Type': coverFile.type },
+          });
+          coverUrl = coverPublicUrl;
+        } catch (e) {
+          console.error("Erreur upload cover:", e);
+          // On continue même si la cover échoue
+        }
       }
 
-      // Création de la version initiale (v1.0)
+      // 4. Création de la version initiale (v1.0)
       const initialVersion: TrackVersion = {
         id: Date.now().toString(),
         name: "v1.0",
@@ -291,6 +308,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         sampleRate: data.sampleRate
       };
 
+      // 5. Ajouter la piste à Firestore
       await addDoc(collection(db, "tracks"), {
         title: data.title,
         artist: data.artist,
@@ -331,11 +349,16 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       // 1. Analyser le nouveau fichier
       const metadata = await analyzeAudioFile(file);
       
-      // 2. Upload du fichier
-      const formData = new FormData();
-      formData.append("file", file);
-      const downloadURL = await uploadFile(formData, "uploads");
+      // 2. Obtenir l'URL pré-signée et uploader le fichier
+      const { signedUrl, publicUrl } = await getUploadUrl(file.name, file.type, "uploads");
+      await fetch(signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
 
+      const downloadURL = publicUrl;
+      
       // 3. Gestion de l'historique des versions
       let updatedVersions = track.versions ? [...track.versions] : [];
 
@@ -444,15 +467,22 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       let newCoverUrl = editingTrack.coverUrl;
 
       if (data.coverFile) {
+        // Si une nouvelle cover est uploadée, on utilise le même flux
         try {
-          const coverFormData = new FormData();
-          coverFormData.append("file", data.coverFile);
-          newCoverUrl = await uploadFile(coverFormData, "covers");
-
-          // Suppression de l'ancienne cover si elle existe
+          const { signedUrl, publicUrl } = await getUploadUrl(data.coverFile.name, data.coverFile.type, "covers");
+          await fetch(signedUrl, {
+            method: 'PUT',
+            body: data.coverFile,
+            headers: { 'Content-Type': data.coverFile.type },
+          });
+          
+          // On supprime l'ancienne cover si elle existe et si l'upload de la nouvelle a réussi
           if (editingTrack.coverUrl) {
              await deleteFile(editingTrack.coverUrl).catch((e: unknown) => console.warn("Erreur suppression ancienne cover:", e));
           }
+
+          newCoverUrl = publicUrl;
+
         } catch (error) {
           console.error("Erreur upload cover:", error);
         }

@@ -1,9 +1,12 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Vérification des variables d'environnement critiques
 if (!process.env.CLOUDFLARE_ENDPOINT || !process.env.CLOUDFLARE_ACCESS_KEY_ID || !process.env.CLOUDFLARE_SECRET_ACCESS_KEY || !process.env.CLOUDFLARE_BUCKET_NAME) {
   console.error("ERREUR CONFIG R2: Variables d'environnement manquantes.");
   console.error("Vérifiez: CLOUDFLARE_ENDPOINT, CLOUDFLARE_ACCESS_KEY_ID, CLOUDFLARE_SECRET_ACCESS_KEY, CLOUDFLARE_BUCKET_NAME");
+  // En production, il est préférable de lancer une erreur pour stopper le processus.
+  throw new Error("Configuration R2 incomplète. Vérifiez les variables d'environnement du serveur.");
 }
 
 // Initialisation du client S3 avec la configuration R2
@@ -15,6 +18,29 @@ const r2Client = new S3Client({
     secretAccessKey: process.env.CLOUDFLARE_SECRET_ACCESS_KEY!,
   },
 });
+
+/**
+ * Génère une URL pré-signée pour permettre un upload direct depuis le client.
+ * @param key - La clé (chemin de fichier) de l'objet sur R2.
+ * @param contentType - Le type MIME du fichier.
+ */
+export async function getPresignedUrlForUpload(key: string, contentType: string) {
+  const command = new PutObjectCommand({
+    Bucket: process.env.CLOUDFLARE_BUCKET_NAME,
+    Key: key,
+    ContentType: contentType,
+  });
+
+  try {
+    // L'URL est valide pour 10 minutes par défaut.
+    const signedUrl = await getSignedUrl(r2Client, command, { expiresIn: 600 });
+    const publicUrl = `${process.env.NEXT_PUBLIC_R2_DOMAIN}/${key}`;
+    return { signedUrl, publicUrl };
+  } catch (error) {
+    console.error("Erreur lors de la génération de l'URL pré-signée:", error);
+    throw error;
+  }
+}
 
 /**
  * Fonction pour uploader un fichier audio sur R2

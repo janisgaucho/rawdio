@@ -1,30 +1,24 @@
 // app/actions/storage.ts
 "use server";
 
-import { uploadAudioToR2, deleteFileFromR2, listFilesFromR2 } from "@/lib/cloudflare";
+import { getPresignedUrlForUpload, deleteFileFromR2, listFilesFromR2 } from "@/lib/cloudflare";
 
 /**
- * Upload un fichier vers R2 via une Server Action
+ * Crée une URL pré-signée pour l'upload d'un fichier.
+ * Le client enverra le fichier directement à cette URL.
  */
-export async function uploadFile(formData: FormData, folder: string = "uploads") {
-  const file = formData.get("file") as File;
-  
-  if (!file) {
-    throw new Error("Aucun fichier fourni");
+export async function getUploadUrl(fileName: string, fileType: string, folder: string = "uploads") {
+  if (!fileName || !fileType) {
+    throw new Error("Nom de fichier ou type manquant.");
   }
 
-  // Conversion du fichier en Buffer pour le SDK AWS
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  
-  // Nettoyage du nom de fichier
-  // On ne "nettoie" plus le nom pour préserver les caractères originaux comme les espaces et accents. R2/S3 gère l'encodage.
-  const fileName = `${folder}/${Date.now()}-${file.name}`;
+  // On préserve les caractères originaux. R2/S3 gère l'encodage.
+  const key = `${folder}/${Date.now()}-${fileName}`;
 
-  // Upload
-  const url = await uploadAudioToR2(buffer, fileName, file.type);
-  
-  return url;
+  // Génération de l'URL signée
+  const { signedUrl, publicUrl } = await getPresignedUrlForUpload(key, fileType);
+
+  return { signedUrl, publicUrl };
 }
 
 /**

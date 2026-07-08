@@ -2,17 +2,17 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-
-// --- COLLE TES CLÉS ICI (Remplacer tout ce bloc) ---
+ 
+// Configuration Firebase lue depuis les variables d'environnement
 const firebaseConfig = {
-  apiKey: "AIzaSyBb0rXpzCm1118HlCUj5uuf7Pqspn9yeUQ",
-  authDomain: "rawdio-5901d.firebaseapp.com",
-  projectId: "rawdio-5901d",
-  messagingSenderId: "305943933508",
-  appId: "1:305943933508:web:04565d41fb019555f64211"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
-// ---------------------------------------------------
-
+ 
 // Initialisation de Firebase
 const app = initializeApp(firebaseConfig);
 
