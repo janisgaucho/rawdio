@@ -230,7 +230,7 @@ export default function MetadataModal({
                             {/* Overlay Texte sur la prévisualisation */}
                             <div className="absolute inset-0 p-2 flex flex-col justify-start items-start bg-linear-to-b from-black/60 to-transparent pointer-events-none">
                                 <h1 className="text-white text-[10px] font-bold leading-tight line-clamp-2 drop-shadow-md">{title}</h1>
-                                <p className="text-white/90 text-[8px] font-light truncate w-full drop-shadow-sm">{artist}</p>
+                                <p className="text-white/90 text-[8px] font-light truncate w-full drop-shadow-sm">{interprete}</p>
                             </div>
                         </>
                     ) : (

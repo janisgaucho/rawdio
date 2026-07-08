@@ -3,7 +3,7 @@
 import React from 'react';
 
 // Ce composant prend l'image générée par l'IA en prop
-const MusicCover = ({ imageBase64, title, artist }: any) => {
+const MusicCover = ({ imageBase64, title, interprete }: any) => {
   
   // Note : On suppose ici que imageBase64 est la chaîne brute sans préfixe.
   // Si le format d'origine est PNG, le navigateur gère souvent bien le mismatch mime-type, 
@@ -30,7 +30,7 @@ const MusicCover = ({ imageBase64, title, artist }: any) => {
         
         {/* Artiste : Fin et plus petit */}
         <p className="text-white/90 text-sm md:text-base font-light mt-1 tracking-wide drop-shadow-sm font-sans truncate w-full">
-          {artist}
+          {interprete}
         </p>
         
       </div>
