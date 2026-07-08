@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAudio, Track, TrackVersion } from "@/components/audio/AudioContext";
-import { ArrowLeft, Play, Pause, Calendar, Music, Disc, Mic2, Sliders, Activity, MoreVertical, Edit2, Trash2, History, Upload, Loader2, MessageSquare, Send, Check, X, AlignLeft, Clock, User, Share2, Wand2, ChevronDown, FileAudio, HardDrive, Sparkles } from "lucide-react";
+import { ArrowLeft, Play, Pause, Calendar, Music, Disc, Mic2, Sliders, Activity, MoreVertical, Edit2, Edit3, Trash2, History, Upload, Loader2, MessageSquare, Send, Check, X, AlignLeft, Clock, User, Share2, Wand2, ChevronDown, FileAudio, HardDrive, Sparkles } from "lucide-react";
 import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, limit, getDoc, setDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { getAuth, onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { db } from "@/lib/firebase";
@@ -170,7 +170,7 @@ export default function TrackPage() {
         // On utilise les données d'édition si disponibles, sinon celles du track
         const result = await generateCoverArt({
             title: editData.title || track.title,
-            artist: editData.artist || track.artist,
+            artist: editData.interprete || track.interprete,
             genre: editData.genre || track.genre || "Abstract",
             bpm: editData.bpm || track.bpm || "120"
         } as any);
@@ -219,7 +219,7 @@ export default function TrackPage() {
           ...track,
           url: version.url,
           duration: version.duration,
-          title: `${track.title} (${version.name})`, // Affiche "Titre (v1.0)" dans le player
+          title: `${track.title} (${version.name})`,
           bpm: version.bpm || track.bpm,
           key: version.key || track.key
       };
@@ -438,7 +438,8 @@ export default function TrackPage() {
         // On ne met à jour que les champs modifiables
         await updateDoc(doc(db, "tracks", track.id), {
             title: editData.title,
-            artist: editData.artist,
+            auteur: editData.auteur,
+            interprete: editData.interprete,
             bpm: editData.bpm,
             key: editData.key,
             type: editData.type,
@@ -612,7 +613,7 @@ export default function TrackPage() {
                                 {track.title}
                             </h1>
                             <p className="text-white/90 text-lg font-light mt-1 tracking-wide drop-shadow-sm font-sans truncate w-full">
-                                {track.artist}
+                                {track.interprete}
                             </p>
                         </div>
                     )}
@@ -659,16 +660,7 @@ export default function TrackPage() {
                     ) : (
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">{track.title}</h1>
                     )}
-                    {isEditing ? (
-                        <input 
-                            type="text" 
-                            value={editData.artist || ""} 
-                            onChange={(e) => handleChange("artist", e.target.value)}
-                            className="w-full bg-transparent border-b border-white/20 text-xl md:text-2xl text-white/60 font-light focus:outline-none focus:border-white transition-colors pb-1"
-                        />
-                    ) : (
-                        <p className="text-xl md:text-2xl text-white/60 font-light">{track.artist}</p>
-                    )}
+                    <p className="text-xl md:text-2xl text-white/60 font-light">{editData.interprete || track.interprete}</p>
                 </div>
             </div>
 
@@ -792,24 +784,31 @@ export default function TrackPage() {
                         {/* Champs conditionnels : Artiste ou Beatmaker */}
                         {track.type === 'morceau' ? (
                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
-                                    <User size={14} /> Artiste
-                                </div>
+                                <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold"><User size={14} /> Interprète</div>
                                 {isEditing ? (
-                                    <input type="text" value={editData.artist || ""} onChange={(e) => handleChange("artist", e.target.value)} className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"/>
+                                    <input type="text" value={editData.interprete || ""} onChange={(e) => handleChange("interprete", e.target.value)} className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"/>
                                 ) : (
-                                    <div className="text-xl font-light">{track.artist || "-"}</div>
+                                    <div className="text-xl font-light">{track.interprete || "-"}</div>
                                 )}
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
-                                    <Mic2 size={14} /> Beatmaker(s)
-                                </div>
+                                <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold"><Mic2 size={14} /> Beatmaker(s)</div>
                                 {isEditing ? (
                                     <input type="text" value={editData.beatmaker || ""} onChange={(e) => handleChange("beatmaker", e.target.value)} className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"/>
                                 ) : (
                                     <div className="text-xl font-light">{track.beatmaker || "-"}</div>
+                                )}
+                            </div>
+                        )}
+
+                        {track.type === 'morceau' && (
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold"><Edit3 size={14} /> Auteur</div>
+                                {isEditing ? (
+                                    <input type="text" value={editData.auteur || ""} onChange={(e) => handleChange("auteur", e.target.value)} className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"/>
+                                ) : (
+                                    <div className="text-xl font-light">{track.auteur || "-"}</div>
                                 )}
                             </div>
                         )}
@@ -850,38 +849,6 @@ export default function TrackPage() {
                             )}
                         </div>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
-                                <Mic2 size={14} /> Beatmaker(s)
-                            </div>
-                            {isEditing ? (
-                                <input 
-                                    type="text" 
-                                    value={editData.beatmaker || ""} 
-                                    onChange={(e) => handleChange("beatmaker", e.target.value)}
-                                    className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"
-                                />
-                            ) : (
-                                <div className="text-xl font-light">{track.beatmaker || "-"}</div>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
-                                <Sliders size={14} /> Ingénieur son
-                            </div>
-                            {isEditing ? (
-                                <input 
-                                    type="text" 
-                                    value={editData.soundEngineer || ""} 
-                                    onChange={(e) => handleChange("soundEngineer", e.target.value)}
-                                    className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"
-                                />
-                            ) : (
-                                <div className="text-xl font-light">{track.soundEngineer || "-"}</div>
-                            )}
-                        </div>
-                        
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
                                 <Activity size={14} /> Durée

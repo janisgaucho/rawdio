@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 // Imports Firestore (Base de données)
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc, getDoc, where, setDoc, QuerySnapshot } from "firebase/firestore";
@@ -42,7 +42,8 @@ export type TrackVersion = {
 export type Track = {
   id: string;
   title: string;
-  artist: string;
+  auteur?: string;
+  interprete?: string;
   bpm: string;
   key: string;
   duration: string;
@@ -64,6 +65,7 @@ type AudioContextType = {
   currentTrack: Track | null;
   playlist: Track[];
   sharedPlaylist: Track[];
+  isPlaying: boolean;
   isUploading: boolean;
   playTrack: (track: Track) => void;
   uploadTrack: (file: File) => Promise<void>;
@@ -76,6 +78,8 @@ type AudioContextType = {
   finalizeUpload: (file: File, data: any, coverFile?: File) => Promise<void>;
   storageUsed: number; // On expose l'espace utilisé
   userPlan: string;    // On expose le plan actuel
+  wavesurferRef: React.MutableRefObject<any | null>;
+  setIsPlaying: (playing: boolean) => void;
 };
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -84,12 +88,14 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [playlist, setPlaylist] = useState<Track[]>([]);
   const [sharedPlaylist, setSharedPlaylist] = useState<Track[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [storageUsed, setStorageUsed] = useState(0);
   const [userPlan, setUserPlan] = useState<string>("free");
   
   // Récupération de l'utilisateur connecté
   const { user } = useAuth();
+  const wavesurferRef = useRef<any | null>(null);
 
   // Synchronisation du profil utilisateur dans Firestore
   useEffect(() => {
@@ -216,7 +222,15 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user]);
 
-  const playTrack = (track: Track) => setCurrentTrack(track);
+  const playTrack = (track: Track) => {
+    // Si on clique sur le morceau déjà en cours, on bascule play/pause
+    if (currentTrack?.id === track.id) {
+      wavesurferRef.current?.playPause();
+    } else {
+      // Sinon, on charge le nouveau morceau
+      setCurrentTrack(track);
+    }
+  };
 
   // 1. DÉBUT DE L'UPLOAD : Analyse
   const uploadTrack = async (file: File) => {
@@ -241,7 +255,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   // 2. FIN DE L'UPLOAD (Appelé par la modale)
   const finalizeUpload = async (
     file: File, 
-    data: { bpm: string; key: string; title: string; artist: string; beatmaker: string; soundEngineer: string; duration: string; type: string; genre: string; bitrate?: number; sampleRate?: number },
+    data: { bpm: string; key: string; title: string; auteur?: string; interprete?: string; beatmaker?: string; soundEngineer: string; duration: string; type: string; genre: string; bitrate?: number; sampleRate?: number },
     coverFile?: File
   ) => {
     if (!user) {
@@ -311,7 +325,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       // 5. Ajouter la piste à Firestore
       await addDoc(collection(db, "tracks"), {
         title: data.title,
-        artist: data.artist,
+        auteur: data.auteur,
+        interprete: data.interprete,
         bpm: data.bpm,     
         key: data.key,     
         duration: data.duration,
@@ -458,7 +473,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Fonction appelée quand l'user valide la modale
-  const handleModalConfirm = async (data: { bpm: string; key: string; title: string; artist: string; beatmaker: string; soundEngineer: string; type: string; genre: string; coverFile?: File }) => {
+  const handleModalConfirm = async (data: { bpm: string; key: string; title: string; auteur?: string; interprete?: string; beatmaker?: string; soundEngineer: string; type: string; genre: string; coverFile?: File }) => {
     if (pendingFile) {
       // Cas UPLOAD
       finalizeUpload(pendingFile.file, { ...data, duration: pendingFile.duration, bitrate: pendingFile.bitrate, sampleRate: pendingFile.sampleRate }, data.coverFile);
@@ -549,7 +564,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AudioContext.Provider value={{ currentTrack, playlist, sharedPlaylist, isUploading, playTrack, uploadTrack, deleteTrack, editTrack, uploadVersion, addComment, restoreVersion, toggleFavorite, finalizeUpload, storageUsed, userPlan }}>
+    <AudioContext.Provider value={{ currentTrack, playlist, sharedPlaylist, isPlaying, setIsPlaying, isUploading, playTrack, uploadTrack, deleteTrack, editTrack, uploadVersion, addComment, restoreVersion, toggleFavorite, finalizeUpload, storageUsed, userPlan, wavesurferRef }}>
       {children}
       
       {/* LA MODALE EST RENDUE ICI, GLOBALEMENT */}
@@ -561,7 +576,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         initialBpm={pendingFile?.bpm || editingTrack?.bpm || ""}
         initialKey={pendingFile?.key || editingTrack?.key || ""}
         initialTitle={editingTrack?.title}
-        initialArtist={editingTrack?.artist}
+        initialAuteur={editingTrack?.auteur}
+        initialInterprete={editingTrack?.interprete}
         initialBeatmaker={editingTrack?.beatmaker}
         initialSoundEngineer={editingTrack?.soundEngineer}
         initialType={editingTrack?.type}

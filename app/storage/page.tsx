@@ -23,7 +23,7 @@ const getStoragePathFromUrl = (url: string) => {
 };
 
 export default function StoragePage() {
-  const { playlist, userPlan, storageUsed } = useAudio();
+  const { playlist, userPlan, storageUsed, deleteTrack } = useAudio();
   const { user, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -52,7 +52,7 @@ export default function StoragePage() {
             category: 'image',
             trackId: track.id,
             associatedTitle: track.title,
-            associatedArtist: track.artist,
+            associatedArtist: track.interprete || track.beatmaker,
           });
         }
       }
@@ -71,7 +71,7 @@ export default function StoragePage() {
             type: version.fileType,
             trackId: track.id,
             associatedTitle: `${track.title} (${version.name})`,
-            associatedArtist: track.artist,
+            associatedArtist: track.interprete || track.beatmaker,
           });
         }
       });
@@ -115,7 +115,13 @@ export default function StoragePage() {
   };
 
   const handleDeleteFile = async (file: any) => {
-      alert("Pour supprimer un fichier, veuillez supprimer le morceau ou la version correspondante directement depuis la bibliothèque ou la page du morceau.");
+      if (confirm(`Attention : La suppression de ce fichier entraînera la suppression complète du morceau "${file.associatedTitle}" et de toutes ses versions. Êtes-vous sûr de vouloir continuer ?`)) {
+        try {
+            await deleteTrack(file.trackId, file.url);
+        } catch (error) {
+            console.error("Erreur lors de la suppression du morceau depuis la page stockage:", error);
+        }
+      }
   };
   
   // Récupération du nom d'affichage du plan (ex: "free" -> "Free")

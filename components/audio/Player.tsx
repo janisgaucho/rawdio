@@ -8,19 +8,18 @@ import { useAudio } from "./AudioContext";
 export default function Player() {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurfer = useRef<WaveSurfer | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoop, setIsLoop] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { currentTrack, playlist, playTrack } = useAudio();
+  const { currentTrack, playlist, playTrack, isPlaying, setIsPlaying, wavesurferRef } = useAudio();
 
   // Initialisation du moteur audio
   useEffect(() => {
     if (!containerRef.current) return;
 
-    wavesurfer.current = WaveSurfer.create({
+    const ws = WaveSurfer.create({
       container: containerRef.current,
       waveColor: "#525252",
       progressColor: "#ededed",
@@ -32,14 +31,16 @@ export default function Player() {
       normalize: true,
     });
 
+    wavesurfer.current = ws;
+    wavesurferRef.current = ws; // On assigne l'instance à la ref du contexte
+
     // Appliquer le volume initial
-    wavesurfer.current.setVolume(volume);
+    ws.setVolume(volume);
 
-    wavesurfer.current.on("play", () => setIsPlaying(true));
-    wavesurfer.current.on("pause", () => setIsPlaying(false));
-    wavesurfer.current.on("finish", () => setIsPlaying(false));
+    ws.on("play", () => setIsPlaying(true));
+    ws.on("pause", () => setIsPlaying(false));
 
-    return () => wavesurfer.current?.destroy();
+    return () => ws.destroy();
   }, []);
 
   // Chargement de la piste quand elle change
@@ -199,7 +200,7 @@ export default function Player() {
             {currentTrack ? currentTrack.title : "Aucune lecture"}
           </span>
           <span className="text-xs text-gray-400 truncate max-w-50">
-            {error ? <span className="text-red-400 flex items-center gap-1"><AlertCircle size={12}/> {error}</span> : (currentTrack ? currentTrack.artist : "Sélectionne une piste")}
+            {error ? <span className="text-red-400 flex items-center gap-1"><AlertCircle size={12}/> {error}</span> : (currentTrack ? (currentTrack.interprete || currentTrack.beatmaker) : "Sélectionne une piste")}
           </span>
         </div>
       </div>

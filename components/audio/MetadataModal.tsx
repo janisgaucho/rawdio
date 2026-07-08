@@ -10,8 +10,9 @@ interface MetadataModalProps {
     bpm: string; 
     key: string; 
     title: string; 
-    artist: string;
-    beatmaker: string;
+    auteur?: string;
+    interprete?: string;
+    beatmaker?: string;
     soundEngineer: string;
     type: string;
     genre: string;
@@ -21,7 +22,8 @@ interface MetadataModalProps {
   initialBpm: string;
   initialKey: string;
   initialTitle?: string;
-  initialArtist?: string;
+  initialAuteur?: string;
+  initialInterprete?: string;
   initialBeatmaker?: string;
   initialSoundEngineer?: string;
   initialType?: string;
@@ -38,7 +40,8 @@ export default function MetadataModal({
   initialBpm, 
   initialKey,
   initialTitle,
-  initialArtist,
+  initialAuteur,
+  initialInterprete,
   initialBeatmaker,
   initialSoundEngineer,
   initialType,
@@ -52,7 +55,8 @@ export default function MetadataModal({
 
   const [bpm, setBpm] = useState(initialBpm);
   const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
+  const [auteur, setAuteur] = useState("");
+  const [interprete, setInterprete] = useState("");
   // On remplace le string simple par un tableau pour gérer plusieurs beatmakers
   const [beatmakers, setBeatmakers] = useState<string[]>([""]);
   const [soundEngineer, setSoundEngineer] = useState("");
@@ -69,7 +73,8 @@ export default function MetadataModal({
   useEffect(() => {
     setBpm(initialBpm === "-" ? "" : initialBpm);
     setTitle(initialTitle || filename.replace(/\.[^/.]+$/, ""));
-    setArtist(initialArtist || "");
+    setAuteur(initialAuteur || "");
+    setInterprete(initialInterprete || "");
     
     if (initialBeatmaker && initialBeatmaker !== "-") {
       setBeatmakers(initialBeatmaker.split(",").map(b => b.trim()));
@@ -101,7 +106,7 @@ export default function MetadataModal({
     // Reset cover state on open
     setGeneratedCover(null);
     setCoverFile(undefined);
-  }, [initialBpm, initialKey, isOpen, filename, initialTitle, initialArtist, initialBeatmaker, initialSoundEngineer, initialType, initialGenre]);
+  }, [initialBpm, initialKey, isOpen, filename, initialTitle, initialAuteur, initialInterprete, initialBeatmaker, initialSoundEngineer, initialType, initialGenre]);
 
   const handleConfirm = () => {
     // On filtre les entrées vides et on joint par une virgule
@@ -114,7 +119,8 @@ export default function MetadataModal({
       bpm: bpm || "-",
       key: note && mode ? `${note}${mode}` : '-',
       title: title || filename.replace(/\.[^/.]+$/, ""),
-      artist: artist || "Unknown Artist",
+      auteur: auteur || "-",
+      interprete: interprete || "Unknown Artist",
       beatmaker: formattedBeatmaker || "-",
       soundEngineer: soundEngineer || "-",
       type: type,
@@ -293,10 +299,16 @@ export default function MetadataModal({
             {/* Champs conditionnels : Artiste ou Beatmaker */}
             {type === 'morceau' ? (
                 <div className="space-y-3">
-                    <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
-                        <User size={12} /> Artiste
-                    </label>
-                    <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)} onKeyDown={handleKeyDown} placeholder="Nom de l'artiste" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"/>
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                            <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2"><User size={12} /> Interprète</label>
+                            <input type="text" value={interprete} onChange={(e) => setInterprete(e.target.value)} onKeyDown={handleKeyDown} placeholder="Nom de l'interprète" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"/>
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2"><Edit3 size={12} /> Auteur</label>
+                            <input type="text" value={auteur} onChange={(e) => setAuteur(e.target.value)} onKeyDown={handleKeyDown} placeholder="Nom de l'auteur" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"/>
+                        </div>
+                    </div>
                 </div>
             ) : (
                 <div className="space-y-3">
