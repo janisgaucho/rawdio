@@ -435,19 +435,20 @@ export default function TrackPage() {
   const handleSave = async () => {
     if (!track) return;
     try {
-        // On ne met à jour que les champs modifiables
-        await updateDoc(doc(db, "tracks", track.id), {
-            title: editData.title,
-            auteur: editData.auteur,
-            interprete: editData.interprete,
-            bpm: editData.bpm,
-            key: editData.key,
-            type: editData.type,
-            genre: editData.genre,
-            beatmaker: editData.beatmaker,
-            soundEngineer: editData.soundEngineer,
+        const dataToSave = {
+            title: editData.title || track.title,
+            auteur: editData.auteur || null,
+            interprete: editData.interprete || null,
+            bpm: editData.bpm || null,
+            key: editData.key || null,
+            type: editData.type || "morceau",
+            genre: editData.genre || null,
+            beatmaker: editData.beatmaker || null,
+            soundEngineer: editData.soundEngineer || null,
             lyrics: editData.lyrics || ""
-        });
+        };
+        // On ne met à jour que les champs modifiables
+        await updateDoc(doc(db, "tracks", track.id), dataToSave);
         setIsEditing(false);
     } catch (error) {
         console.error("Erreur sauvegarde:", error);

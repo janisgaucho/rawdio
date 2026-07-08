@@ -10,7 +10,7 @@ export async function generateCoverArt(data: { genre: string; bpm: string; title
 
   try {
     // 1. Définir l'ambiance et les couleurs avec Gemini
-    const textModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     // On demande une description visuelle pure (SANS TEXTE)
     const colorPrompt = `
