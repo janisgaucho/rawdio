@@ -195,10 +195,10 @@ export default function Player() {
         </div>
         
         <div className="flex flex-col justify-center overflow-hidden">
-          <span className="text-sm font-bold text-white truncate max-w-[200px]">
+          <span className="text-sm font-bold text-white truncate max-w-50">
             {currentTrack ? currentTrack.title : "Aucune lecture"}
           </span>
-          <span className="text-xs text-gray-400 truncate max-w-[200px]">
+          <span className="text-xs text-gray-400 truncate max-w-50">
             {error ? <span className="text-red-400 flex items-center gap-1"><AlertCircle size={12}/> {error}</span> : (currentTrack ? currentTrack.artist : "Sélectionne une piste")}
           </span>
         </div>
@@ -224,6 +224,9 @@ export default function Player() {
           value={isMuted ? 0 : volume}
           onChange={handleVolumeChange}
           className="w-20 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white hover:accent-gray-200"
+          style={{
+            background: `linear-gradient(to right, white ${isMuted ? 0 : volume * 100}%, #3f3f46 ${isMuted ? 0 : volume * 100}%)`
+          }}
         />
       </div>
 

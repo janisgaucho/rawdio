@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from 'next/link';
 import { useAudio } from "@/components/audio/AudioContext";
 import { useAuth } from "@/components/auth/AuthContext";
-import { HardDrive, FileAudio, MoreVertical, User, CreditCard, LogOut, Image as ImageIcon, Trash2, Loader2, Eye, Play, X, Music2, Home, Music } from 'lucide-react';
-import { UploadButton } from "@/UploadButton"; // Assurez-vous que le chemin est correct
-import { listFiles, deleteFile as deleteFileAction } from "@/app/actions/storage";
+import { HardDrive, FileAudio, MoreVertical, User, CreditCard, LogOut, Image as ImageIcon, Trash2, Loader2, Eye, Play, X, Music2, Home, Music, Link2 } from 'lucide-react';
+import { UploadButton } from "@/UploadButton";
+import { deleteFile as deleteFileAction } from "@/app/actions/storage";
 import { getPlanLimit, PLANS, PlanType } from "@/lib/plans";
 
 // Helper pour extraire la clé (le chemin) depuis une URL R2
@@ -23,103 +23,71 @@ const getStoragePathFromUrl = (url: string) => {
 };
 
 export default function StoragePage() {
-  const { playlist, sharedPlaylist, userPlan } = useAudio();
+  const { playlist, userPlan, storageUsed } = useAudio();
   const { user, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
 
-  // Récupérer TOUS les fichiers physiques du Storage
-  useEffect(() => {
-    if (!user) return;
-
-    let isMounted = true;
+  // La source de vérité est maintenant la playlist de l'utilisateur, pas un scan de R2.
+  const processedFiles = useMemo(() => {
+    if (!user) return [];
     setLoading(true);
-    setFiles([]);
-    setError(null);
 
-    const fetchFiles = async () => {
-      try {
-        const r2Files = await listFiles();
-        if (isMounted) {
-          setFiles(r2Files);
+    const filesMap = new Map<string, any>();
+
+    // On ne parcourt que la playlist de l'utilisateur
+    playlist.forEach(track => {
+      // Ajoute la cover
+      if (track.coverUrl) {
+        const path = getStoragePathFromUrl(track.coverUrl);
+        if (path && !filesMap.has(path)) {
+          filesMap.set(path, {
+            id: path,
+            url: track.coverUrl,
+            fullPath: path,
+            name: path.split('/').pop() || '',
+            size: 0, // La taille n'est pas dispo sur le modèle Track pour la cover
+            date: track.date,
+            category: 'image',
+            trackId: track.id,
+            associatedTitle: track.title,
+            associatedArtist: track.artist,
+          });
         }
-      } catch (e) {
-        if (isMounted) {
-          console.error("Erreur R2 storage:", e);
-          setError("Impossible de charger la liste des fichiers depuis R2.");
-        }
-      } finally {
-        if (isMounted) setLoading(false);
       }
-    };
-
-    fetchFiles();
-
-    return () => {
-        isMounted = false;
-    };
-  }, [user, refreshKey]);
-  
-  // --- OPTIMISATION ---
-  // 1. Créer un Set de tous les chemins de fichiers utilisés (playlist + partagés) pour une recherche rapide (O(1))
-  const allTracks = [...playlist, ...sharedPlaylist];
-  const usedPaths = new Set<string>();
-  const pathToTrackMap = new Map<string, any>();
-
-  allTracks.forEach(track => {
-    if (track.url) {
-      const path = getStoragePathFromUrl(track.url);
-      if (path) {
-        usedPaths.add(path);
-        pathToTrackMap.set(path, { track, versionLabel: '' });
-      }
-    }
-    if (track.coverUrl) {
-      const path = getStoragePathFromUrl(track.coverUrl);
-      if (path) {
-        usedPaths.add(path);
-        pathToTrackMap.set(path, { track, versionLabel: '' });
-      }
-    }
-    track.versions?.forEach(version => {
-      if (version.url) {
+      // Ajoute chaque version audio
+      track.versions?.forEach(version => {
         const path = getStoragePathFromUrl(version.url);
-        if (path) {
-          usedPaths.add(path);
-          pathToTrackMap.set(path, { track, versionLabel: ` (${version.name})` });
+        if (path && !filesMap.has(path)) {
+          filesMap.set(path, {
+            id: path,
+            url: version.url,
+            fullPath: path,
+            name: path.split('/').pop() || '',
+            size: version.size || 0,
+            date: version.createdAt,
+            category: 'audio',
+            type: version.fileType,
+            trackId: track.id,
+            associatedTitle: `${track.title} (${version.name})`,
+            associatedArtist: track.artist,
+          });
         }
-      }
+      });
     });
-  });
 
-  // 2. Traiter les fichiers en utilisant le Set pour vérifier leur statut
-  const processedFiles = files.map(file => {
-      const isUsed = usedPaths.has(file.fullPath);
-      const associatedData = pathToTrackMap.get(file.fullPath);
-      return {
-          ...file,
-          isUsed,
-          isOrphan: !isUsed,
-          associatedTitle: associatedData ? `${associatedData.track.title}${associatedData.versionLabel}` : (file.name.replace(/\.[^/.]+$/, "")),
-          associatedArtist: associatedData ? associatedData.track.artist : ""
-      };
-  });
-  
-  // Tri : Orphelins en premier, puis par date
-  processedFiles.sort((a, b) => {
-      if (a.isUsed === b.isUsed) {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }
-      return a.isUsed ? 1 : -1;
-  });
+    const files = Array.from(filesMap.values());
+    files.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    setLoading(false);
+    return files;
 
-  const totalUsed = processedFiles.reduce((acc, file) => acc + (file.size || 0), 0);
+  }, [playlist, user]);
+
+  const totalUsed = storageUsed;
   const maxStorage = getPlanLimit(userPlan);
-  const usagePercent = Math.min(100, (totalUsed / maxStorage) * 100);
+  const usagePercent = maxStorage > 0 ? Math.min(100, (totalUsed / maxStorage) * 100) : 0;
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return "0 B";
@@ -147,43 +115,13 @@ export default function StoragePage() {
   };
 
   const handleDeleteFile = async (file: any) => {
-      if (file.isUsed) {
-          alert("Ce fichier est actuellement utilisé par un morceau. Supprimez le morceau ou changez sa version avant de supprimer le fichier.");
-          return;
-      }
-      if (!confirm("Supprimer définitivement ce fichier inutilisé ?")) return;
-
-      try {
-          await deleteFileAction(file.url);
-          setFiles(prev => prev.filter(f => f.id !== file.id)); // Mise à jour optimiste
-      } catch (e) {
-          console.error("Erreur suppression:", e);
-          alert("Erreur lors de la suppression.");
-      }
+      alert("Pour supprimer un fichier, veuillez supprimer le morceau ou la version correspondante directement depuis la bibliothèque ou la page du morceau.");
   };
-
+  
   // Récupération du nom d'affichage du plan (ex: "free" -> "Free")
   const currentPlanName = PLANS[userPlan as PlanType]?.name || "Free";
 
   return (
-    <div className="flex h-screen w-full bg-black">
-      {/* EXEMPLE DE SIDEBAR */}
-      <aside className="w-64 shrink-0 bg-[#0a0a0a] border-r border-white/10 p-6 flex flex-col">
-        <div className="text-2xl font-bold text-white mb-10">RAWDIO</div>
-        <nav className="flex flex-col gap-4">
-            <Link href="/" className="flex items-center gap-3 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-                <Home size={20} />
-                <span>Accueil</span>
-            </Link>
-            <Link href="/storage" className="flex items-center gap-3 text-sm font-medium text-white bg-white/10 p-2 rounded-lg">
-                <HardDrive size={20} />
-                <span>Stockage</span>
-            </Link>
-            {/* Voici le bouton corrigé. Il remplace le <Link href="/upload"> */}
-            <UploadButton />
-        </nav>
-      </aside>
-
       <main className="flex-1 overflow-y-auto pb-40">
         <div className="max-w-7xl mx-auto">
           
@@ -271,13 +209,6 @@ export default function StoragePage() {
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-[#222]">
-                      {error && (
-                          <tr>
-                              <td colSpan={5} className="px-6 py-8 text-center text-red-400">
-                                  {error}
-                              </td>
-                          </tr>
-                      )}
                       {loading ? (
                           <tr>
                               <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
@@ -301,13 +232,10 @@ export default function StoragePage() {
                                           )}
                                       </div>
                                       <div>
-                                          <div className={`font-medium flex items-center gap-2 ${file.isOrphan ? 'text-orange-400' : 'text-white'}`}>
+                                          <div className="font-medium flex items-center gap-2 text-white">
+                                              <Link href={`/track/${file.trackId}`} className="hover:underline">
                                               {file.associatedTitle}
-                                              {file.isOrphan && (
-                                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded border border-orange-400/20">
-                                                      ORPHELIN
-                                                  </span>
-                                              )}
+                                              </Link>
                                           </div>
                                           <div className="text-xs">{file.associatedArtist}</div>
                                       </div>
@@ -334,9 +262,8 @@ export default function StoragePage() {
                                       </button>
                                       <button 
                                           onClick={() => handleDeleteFile(file)} 
-                                          disabled={file.isUsed}
-                                          className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed" 
-                                          title={file.isUsed ? "Ce fichier est utilisé et ne peut pas être supprimé." : "Supprimer ce fichier"}>
+                                          className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors" 
+                                          title="Supprimer le morceau associé pour libérer l'espace">
                                           <Trash2 size={16} />
                                       </button>
                                   </div>
@@ -392,6 +319,5 @@ export default function StoragePage() {
           </div>
           </div>
         </main>
-    </div>
   );
 }

@@ -758,10 +758,10 @@ export default function TrackPage() {
                         {isEditing ? (
                             <div className="flex gap-1 w-full mt-1">
                                 <button 
-                                    onClick={() => handleChange("type", "prod")}
-                                    className={`flex-1 py-2 text-xs font-bold rounded border transition-colors ${editData.type === 'prod' ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
+                                    onClick={() => handleChange("type", "instrumentale")}
+                                    className={`flex-1 py-2 text-xs font-bold rounded border transition-colors ${editData.type === 'instrumentale' ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
                                 >
-                                    Prod
+                                    Instrumentale
                                 </button>
                                 <button 
                                     onClick={() => handleChange("type", "morceau")}
@@ -789,6 +789,42 @@ export default function TrackPage() {
                     </h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
+                        {/* Champs conditionnels : Artiste ou Beatmaker */}
+                        {track.type === 'morceau' ? (
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
+                                    <User size={14} /> Artiste
+                                </div>
+                                {isEditing ? (
+                                    <input type="text" value={editData.artist || ""} onChange={(e) => handleChange("artist", e.target.value)} className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"/>
+                                ) : (
+                                    <div className="text-xl font-light">{track.artist || "-"}</div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
+                                    <Mic2 size={14} /> Beatmaker(s)
+                                </div>
+                                {isEditing ? (
+                                    <input type="text" value={editData.beatmaker || ""} onChange={(e) => handleChange("beatmaker", e.target.value)} className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"/>
+                                ) : (
+                                    <div className="text-xl font-light">{track.beatmaker || "-"}</div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
+                                <Sliders size={14} /> Ingénieur son
+                            </div>
+                            {isEditing ? (
+                                <input type="text" value={editData.soundEngineer || ""} onChange={(e) => handleChange("soundEngineer", e.target.value)} className="w-full bg-transparent border-b border-white/10 text-xl font-light focus:outline-none focus:border-white transition-colors"/>
+                            ) : (
+                                <div className="text-xl font-light">{track.soundEngineer || "-"}</div>
+                            )}
+                        </div>
+
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
                                 <Disc size={14} /> Genre

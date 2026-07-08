@@ -260,10 +260,10 @@ export default function MetadataModal({
                 </label>
                 <div className="grid grid-cols-2 gap-2 bg-white/5 border border-white/10 p-1 rounded-xl shadow-inner">
                     <button 
-                        onClick={() => setType('prod')}
-                        className={`py-3 rounded-lg text-center text-sm transition-colors duration-200 ${type === 'prod' ? 'bg-white text-black font-bold' : 'hover:bg-white/10'}`}
+                        onClick={() => setType('instrumentale')}
+                        className={`py-3 rounded-lg text-center text-sm transition-colors duration-200 ${type === 'instrumentale' ? 'bg-white text-black font-bold' : 'hover:bg-white/10'}`}
                     >
-                        Prod
+                        Instrumentale
                     </button>
                     <button 
                         onClick={() => setType('morceau')}
@@ -290,43 +290,37 @@ export default function MetadataModal({
                 />
             </div>
 
-            {/* Input Artiste */}
-            <div className="space-y-3">
-                <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
-                    <User size={12} /> Artiste
-                </label>
-                <input 
-                    type="text" 
-                    value={artist}
-                    onChange={(e) => setArtist(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Nom de l'artiste"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"
-                />
-            </div>
-            
-            {/* Input Genre */}
-            <div className="space-y-3">
-                <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
-                    <Tag size={12} /> Style / Genre
-                </label>
-                <div className="relative">
-                    <select 
-                        value={genre}
-                        onChange={(e) => setGenre(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner appearance-none cursor-pointer"
-                    >
-                        <option value="" className="bg-[#111] text-white/50">Sélectionner un style...</option>
-                        {GENRES.map((g) => (
-                            <option key={g} value={g} className="bg-[#111] text-white">{g}</option>
+            {/* Champs conditionnels : Artiste ou Beatmaker */}
+            {type === 'morceau' ? (
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                        <User size={12} /> Artiste
+                    </label>
+                    <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)} onKeyDown={handleKeyDown} placeholder="Nom de l'artiste" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"/>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                        <SlidersHorizontal size={12} /> Beatmaker(s)
+                    </label>
+                    <div className="space-y-2">
+                        {beatmakers.map((bm, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <input type="text" value={bm} onChange={(e) => handleBeatmakerChange(index, e.target.value)} onKeyDown={handleKeyDown} placeholder={index === 0 ? "Nom du beatmaker" : "Autre beatmaker"} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"/>
+                                {index === beatmakers.length - 1 ? (
+                                    <button onClick={addBeatmakerField} className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all shrink-0" title="Ajouter un autre beatmaker">
+                                        <PlusCircle size={20} />
+                                    </button>
+                                ) : (
+                                    <button onClick={() => removeBeatmakerField(index)} className="p-3 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 text-white/60 hover:text-red-400 transition-all shrink-0" title="Retirer ce beatmaker">
+                                        <X size={20} />
+                                    </button>
+                                )}
+                            </div>
                         ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-white/40">
-                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* BPM & Key */}
             <div className="grid grid-cols-2 gap-6">
@@ -388,50 +382,37 @@ export default function MetadataModal({
                 </div>
             </div>
 
-            {/* Toggle More Info */}
-            <div className="border-t border-white/10 pt-6">
-                <button onClick={() => setShowMore(!showMore)} className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
-                    <PlusCircle size={16} />
-                    <span>{showMore ? "Masquer les informations avancées" : "Ajouter plus d'informations"}</span>
-                </button>
+            {/* Ingénieur du son */}
+            <div className="space-y-3">
+                <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                    <Ear size={12} /> Ingénieur du son
+                </label>
+                <input type="text" value={soundEngineer} onChange={(e) => setSoundEngineer(e.target.value)} onKeyDown={handleKeyDown} placeholder="Nom de l'ingénieur du son" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"/>
             </div>
 
-            {/* Champs additionnels */}
-            {showMore && (
-                <div className="space-y-6">
-                    {/* Beatmakers Dynamiques */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
-                            <SlidersHorizontal size={12} /> Beatmaker(s)
-                        </label>
-                        <div className="space-y-2">
-                            {beatmakers.map((bm, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <input 
-                                        type="text" 
-                                        value={bm} 
-                                        onChange={(e) => handleBeatmakerChange(index, e.target.value)} 
-                                        onKeyDown={handleKeyDown} 
-                                        placeholder={index === 0 ? "Nom du beatmaker" : "Autre beatmaker"} 
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"
-                                    />
-                                    {/* Si c'est le dernier champ, on affiche le bouton +, sinon le bouton supprimer */}
-                                    {index === beatmakers.length - 1 ? (
-                                        <button onClick={addBeatmakerField} className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all shrink-0" title="Ajouter un autre beatmaker">
-                                            <PlusCircle size={20} />
-                                        </button>
-                                    ) : (
-                                        <button onClick={() => removeBeatmakerField(index)} className="p-3 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 text-white/60 hover:text-red-400 transition-all shrink-0" title="Retirer ce beatmaker">
-                                            <X size={20} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+            {/* Input Genre */}
+            <div className="space-y-3">
+                <label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                    <Tag size={12} /> Style / Genre
+                </label>
+                <div className="relative">
+                    <select 
+                        value={genre}
+                        onChange={(e) => setGenre(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner appearance-none cursor-pointer"
+                    >
+                        <option value="" className="bg-[#111] text-white/50">Sélectionner un style...</option>
+                        {GENRES.map((g) => (
+                            <option key={g} value={g} className="bg-[#111] text-white">{g}</option>
+                        ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-white/40">
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </div>
-                    <div className="space-y-3"><label className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2"><Ear size={12} /> Ingénieur du son</label><input type="text" value={soundEngineer} onChange={(e) => setSoundEngineer(e.target.value)} onKeyDown={handleKeyDown} placeholder="Nom de l'ingénieur du son" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-lg font-light text-white placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all shadow-inner"/></div>
                 </div>
-            )}
+            </div>
+
           </div>
         </div>
 
