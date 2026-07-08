@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from 'next/link';
-import { useAudio } from "@/components/audio/AudioContext";
 import { useAuth } from "@/components/auth/AuthContext";
-import { HardDrive, FileAudio, MoreVertical, User, CreditCard, LogOut, Image as ImageIcon, Trash2, Loader2, Eye, Play, X, Music2, Home, Music, Link2 } from 'lucide-react';
+import { useAudio, Track, TrackVersion } from "@/components/audio/AudioContext";
+import { FileAudio, Image as ImageIcon, Trash2, Loader2, Eye, Play, X, Music2 } from 'lucide-react';
 import { UploadButton } from "@/UploadButton";
 import { deleteFile as deleteFileAction } from "@/app/actions/storage";
 import { getPlanLimit, PLANS, PlanType } from "@/lib/plans";
@@ -24,8 +24,7 @@ const getStoragePathFromUrl = (url: string) => {
 
 export default function StoragePage() {
   const { playlist, userPlan, storageUsed, deleteTrack } = useAudio();
-  const { user, logout } = useAuth();
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
 
@@ -37,7 +36,7 @@ export default function StoragePage() {
     const filesMap = new Map<string, any>();
 
     // On ne parcourt que la playlist de l'utilisateur
-    playlist.forEach(track => {
+    playlist.forEach((track: Track) => {
       // Ajoute la cover
       if (track.coverUrl) {
         const path = getStoragePathFromUrl(track.coverUrl);
@@ -57,7 +56,7 @@ export default function StoragePage() {
         }
       }
       // Ajoute chaque version audio
-      track.versions?.forEach(version => {
+      track.versions?.forEach((version: TrackVersion) => {
         const path = getStoragePathFromUrl(version.url);
         if (path && !filesMap.has(path)) {
           filesMap.set(path, {
@@ -128,56 +127,7 @@ export default function StoragePage() {
   const currentPlanName = PLANS[userPlan as PlanType]?.name || "Free";
 
   return (
-      <main className="flex-1 overflow-y-auto pb-40">
-        <div className="max-w-7xl mx-auto">
-          
-          <div className="sticky top-0 z-30 bg-black/90 backdrop-blur-xl px-8 py-8 flex items-center justify-between mb-8 border-b border-white/5">
-              <div>
-                  <h1 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-                      <HardDrive size={28} /> Stockage
-                  </h1>
-                  <p className="text-zinc-500">Gérez votre espace de stockage et vos fichiers.</p>
-              </div>
-              
-              {/* Menu Utilisateur */}
-              {user && (
-                  <div className="relative flex items-center gap-4">
-                      <div className="text-right">
-                          <div className="text-sm font-bold text-white">{user.displayName}</div>
-                          <div className="text-xs text-zinc-400">{user.email}</div>
-                      </div>
-                      <button 
-                          onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                          className={`p-2 rounded-full text-white transition ${isUserMenuOpen ? 'bg-white/20' : 'bg-white/5 hover:bg-white/10'}`}
-                      >
-                          <MoreVertical size={20} />
-                      </button>
-
-                      {isUserMenuOpen && (
-                          <>
-                              <div className="fixed inset-0 z-10" onClick={() => setIsUserMenuOpen(false)}></div>
-                              <div className="absolute right-0 top-12 w-48 bg-[#111] border border-[#333] rounded-xl shadow-2xl z-20 overflow-hidden py-1">
-                                  <Link href="/account" onClick={() => setIsUserMenuOpen(false)} className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors">
-                                      <User size={16} /> <span>Mon compte</span>
-                                  </Link>
-                                  <Link href="/subscription" onClick={() => setIsUserMenuOpen(false)} className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors">
-                                      <CreditCard size={16} /> <span>Abonnement</span>
-                                  </Link>
-                                  <Link href="/storage" onClick={() => setIsUserMenuOpen(false)} className="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors">
-                                      <HardDrive size={16} /> <span>Stockage</span>
-                                  </Link>
-                                  <div className="h-px bg-[#222] my-1"></div>
-                                  <button onClick={() => { logout(); setIsUserMenuOpen(false); }} className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
-                                      <LogOut size={16} /> <span>Se déconnecter</span>
-                                  </button>
-                              </div>
-                          </> 
-                      )}
-                  </div>
-              )}
-          </div>
-
-          <div className="px-8">
+      <div className="max-w-7xl mx-auto mt-8">
 
           {/* BARRE DE PROGRESSION */}
           <div className="bg-[#111] border border-[#222] rounded-2xl p-6 mb-8">
@@ -289,7 +239,7 @@ export default function StoragePage() {
 
           {/* MODALE DE PREVIEW */}
           {previewFile && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setPreviewFile(null)}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 cursor-pointer" onClick={() => setPreviewFile(null)}>
                   <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-3xl relative flex flex-col items-center shadow-2xl" onClick={e => e.stopPropagation()}>
                       <button 
                           onClick={() => setPreviewFile(null)}
@@ -323,7 +273,5 @@ export default function StoragePage() {
           )}
 
           </div>
-          </div>
-        </main>
   );
 }

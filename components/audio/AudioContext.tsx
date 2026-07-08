@@ -570,6 +570,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       {/* LA MODALE EST RENDUE ICI, GLOBALEMENT */}
       <MetadataModal 
         isOpen={showModal}
+        // @ts-ignore
         onClose={() => { setShowModal(false); setPendingFile(null); setEditingTrack(null); }}
         onConfirm={handleModalConfirm}
         filename={pendingFile?.file.name || editingTrack?.title || ""}

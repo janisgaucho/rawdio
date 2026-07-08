@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Home, Library, Mic2, Music2, Sliders, Users, UploadCloud } from "lucide-react";
+import { Home, Library, Mic2, KeyboardMusic, Sliders, Users, UploadCloud } from "lucide-react";
 import { useAudio } from "@/components/audio/AudioContext";
 
 export default function Sidebar() {
@@ -67,7 +67,7 @@ export default function Sidebar() {
                     <span>Artistes</span>
                 </Link>
                 <Link href="/beatmakers" className={getLinkClass("/beatmakers")}>
-                    <Music2 size={18} />
+                    <KeyboardMusic size={18} />
                     <span>Beatmakers</span>
                 </Link>
                 <Link href="/engineers" className={getLinkClass("/engineers")}>
@@ -80,7 +80,7 @@ export default function Sidebar() {
 
       {/* VERSION */}
       <div className="p-6 text-xs text-zinc-700 font-mono text-center">
-        v1.0.0 Alpha
+        v1.0.08 | <Link href="/legal" className="hover:text-zinc-300 transition-colors">Mentions légales</Link>
       </div>
     </aside>
   );
